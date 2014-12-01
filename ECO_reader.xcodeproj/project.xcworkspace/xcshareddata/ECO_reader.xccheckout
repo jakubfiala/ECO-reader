@@ -6,31 +6,35 @@
 	<false/>
 	<key>IDESourceControlProjectIdentifier</key>
 	<string>BC34A82F-E851-4A79-A55D-A0FA20C45861</string>
+	<key>IDESourceControlProjectName</key>
+	<string>ECO_reader</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>37526DA425E5430474A14FBFA1BC4525160B5FC1</key>
-		<string>https://github.com/kylemcdonald/ofxCv.git</string>
+		<key>052921AF4434A12A8ECAF987134D7AA84CBEFF8D</key>
+		<string>https://github.com/jakubfiala/ECO-reader.git</string>
 	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>ECO_reader.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>37526DA425E5430474A14FBFA1BC4525160B5FC1</key>
-		<string>ofxCv/</string>
+		<key>052921AF4434A12A8ECAF987134D7AA84CBEFF8D</key>
+		<string>../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
-	<string>https://github.com/kylemcdonald/ofxCv.git</string>
+	<string>https://github.com/jakubfiala/ECO-reader.git</string>
 	<key>IDESourceControlProjectVersion</key>
 	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>37526DA425E5430474A14FBFA1BC4525160B5FC1</string>
+	<string>052921AF4434A12A8ECAF987134D7AA84CBEFF8D</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>37526DA425E5430474A14FBFA1BC4525160B5FC1</string>
+			<string>052921AF4434A12A8ECAF987134D7AA84CBEFF8D</string>
 			<key>IDESourceControlWCCName</key>
-			<string>ofxCv</string>
+			<string>ECO_reader</string>
 		</dict>
 	</array>
 </dict>

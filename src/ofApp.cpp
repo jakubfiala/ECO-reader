@@ -1,3 +1,11 @@
+// ECO_reader
+// oF implementation of structured light scanning (laser line)
+// by Jakub Fiala ||| http://fiala.uk
+// for the Ex Caelis Oblata project http://excaelisoblata.tumblr.com/
+// developed at Goldsmiths, London
+// 2014
+
+
 #include "ofApp.h"
 
 using namespace cv;
