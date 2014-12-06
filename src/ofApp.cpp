@@ -66,13 +66,31 @@ void ofApp::update(){
 
         
         thinning(inmat);
-        
-        /*for (int i = 0; i < distances.size(); i++) {
-            printf("%f, ", distances[i]);
+        //only do this if we're detecting a line
+        if (points.size() > 0) {
+            double maxDistance = 0.0;
+            double minDistance = 1000.0;
+            
+            //normalize to -1, 1 (because we're not killing the soundcard are we?
+            for (int i = 0; i < points.size(); i++) {
+                distances.push_back(pointDistanceFromLine(points[0], points[points.size()-1], points[i]));
+                if (distances[i] > maxDistance) {
+                    maxDistance = distances[i];
+                }
+                if (distances[i] < minDistance) {
+                    minDistance = distances[i];
+                }
+            }
+            
+            for (int i = 0; i < points.size(); i++) {
+                distances[i] = (distances[i]-minDistance)/(maxDistance-minDistance) * 2 - 1;
+                printf("%f ", distances[i]);
+            }
+            
+            
+            //printf("%f %f \n\n", minDistance, maxDistance);
+            printf("\n\n");
         }
-        printf("\n");*/
-        
-        
         
     }
     
@@ -84,8 +102,31 @@ void ofApp::update(){
 void ofApp::draw(){
     ofSetHexColor(0xffffff);
     ofSetColor(255, 150);
-    gsImg.draw(0, 0, camWidth, camHeight);
+    //gsImg.draw(0, 0, camWidth, camHeight);
     drawMat(inmat, 0, 0);
+}
+
+void ofApp::audioRequested 	(float * output, int bufferSize, int nChannels)
+{
+    for (int i = 0; i < bufferSize; i++)
+    {
+        double remainder;
+        double out;
+        bufferPosition=(bufferPosition+1);
+        remainder = bufferPosition - (long) bufferPosition;
+        if ( bufferPosition > distances.size()) bufferPosition=0;
+        out = ((1-remainder) * distances[1+ (long) bufferPosition] + remainder * distances[2+(long) bufferPosition])/32767;
+
+        mix.stereo(out, outputs, 0.5);
+        
+        output[i*nChannels    ] = outputs[0];
+        output[i*nChannels + 1] = outputs[1];
+    }
+}
+
+void ofApp::audioReceived 	(float * input, int bufferSize, int nChannels)
+{
+    
 }
 
 //--------------------------------------------------------------
@@ -147,7 +188,8 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
  */
 void ofApp::thinningIteration(cv::Mat& im, int iter)
 {
-    distances.clear();
+    points.clear();
+
     cv::Mat marker = cv::Mat::zeros(im.size(), CV_8UC1);
     
     for (int i = 1; i < im.rows-1; i++)
@@ -174,11 +216,14 @@ void ofApp::thinningIteration(cv::Mat& im, int iter)
             if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0)
             {
                 marker.at<uchar>(i,j) = 1;
-                distances.push_back(j);
+                vector<int> pt;
+                pt.push_back(i);
+                pt.push_back(j);
+                points.push_back(pt);
             }
         }
     }
-    
+
     im &= ~marker;
 }
 
@@ -203,4 +248,20 @@ void ofApp::thinning(cv::Mat& im)
     while (cv::countNonZero(diff) > 0);
     
     im *= 255;
+}
+
+
+//written by Tom Monkman (get a website Tom!)
+double ofApp::pointDistanceFromLine(vector<int> v1, vector<int> v2, vector<int> point)
+{
+    int x1 = v1[0];
+    int y1 = v1[1];
+    int x2 = v2[0];
+    int y2 = v2[1];
+    int pointX = point[0];
+    int pointY = point[1];
+    //Takes a line from 2 points (x1,y1/x2,y2) then works out the perpendicular distance to another point (pointX,pointY) and returns it.
+    //http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
+    
+    return (((x2 - x1)*(y1 - pointY)) - ((x1 - pointX)*(y2 - y1))) / (sqrt((double)((x2 - x1)*(x2 - x1)) + ((y2 - y1)*(y2 - y1))));
 }
