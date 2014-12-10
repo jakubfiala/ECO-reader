@@ -110,12 +110,7 @@ void ofApp::audioRequested 	(float * output, int bufferSize, int nChannels)
 {
     for (int i = 0; i < bufferSize; i++)
     {
-        double remainder;
-        double out;
-        bufferPosition=(bufferPosition+1);
-        remainder = bufferPosition - (long) bufferPosition;
-        if ( bufferPosition > distances.size()) bufferPosition=0;
-        out = ((1-remainder) * distances[1+ (long) bufferPosition] + remainder * distances[2+(long) bufferPosition])/32767;
+        double out = audioPlayer.jfBufferPlay(distances, distances.size());
 
         mix.stereo(out, outputs, 0.5);
         
