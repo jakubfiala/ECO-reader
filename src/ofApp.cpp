@@ -11,6 +11,7 @@
 using namespace cv;
 using namespace ofxCv;
 
+
 //--------------------------------------------------------------
 void ofApp::setup(){
     camWidth 		= 640;	// try to grab at this size.
@@ -30,17 +31,15 @@ void ofApp::setup(){
     if (devices.size() == 1)
         vidGrabber.setDeviceID(0);
     else
-        vidGrabber.setDeviceID(1); //always select the secondary camera
+        vidGrabber.setDeviceID(0); //always select the secondary camera
     vidGrabber.setDesiredFrameRate(60);
     vidGrabber.initGrabber(camWidth,camHeight);
     
-    videoInverted 	= new unsigned char[camWidth*camHeight*3];
-    videoTexture.allocate(camWidth,camHeight, GL_RGB);
     ofSetVerticalSync(true);
     
-    colorImg.allocate(640, 480);
     gsImg.allocate(640, 480);
-    img.allocate(640, 480, OF_IMAGE_GRAYSCALE);
+    
+    ofSoundStreamSetup(2,0,this, 44100, 512, 4);
 }
 
 //--------------------------------------------------------------
@@ -52,14 +51,18 @@ void ofApp::update(){
     
     if (vidGrabber.isFrameNew()){
         
+        
         //work with the data
-        colorImg.setFromPixels(vidGrabber.getPixelsRef());
-        gsImg = colorImg;
-        pixels = gsImg.getPixelsRef();
+        pixels = vidGrabber.getPixelsRef();
+        pixels = pixels.getChannel(1); //EXTRACT THE GREEN CHANNEL, IT'S BETTER Ð this should be mentioned in thesis
+        gsImg.setFromPixels(pixels);
+        gsImg.threshold(30);
+        
         for (int i = 0; i < pixels.size(); i++){
-            if (pixels[i] > 215) pixels[i] = pixels[i];
+            if (pixels[i] > 200) pixels[i] = pixels[i];
             else pixels[i] = 1;
         }
+        
         gsImg.setFromPixels(pixels);
         
         inmat = toCv(pixels);
@@ -67,29 +70,57 @@ void ofApp::update(){
         
         thinning(inmat);
         //only do this if we're detecting a line
-        if (points.size() > 0) {
+        if (!points.empty()) {
+            
+            
+            mins.clear();
+            maxs.clear();
+            distances.clear();
+            peaks.clear();
+            
             double maxDistance = 0.0;
             double minDistance = 1000.0;
             
-            //normalize to -1, 1 (because we're not killing the soundcard are we?
+            
+            
+            
             for (int i = 0; i < points.size(); i++) {
-                distances.push_back(pointDistanceFromLine(points[0], points[points.size()-1], points[i]));
-                if (distances[i] > maxDistance) {
+                distances.push_back((float)pointDistanceFromLine(points[0], points[points.size()-1], points[i]));
+                if (i > 1) {
+                    distances[i] -= (distances[i]-distances[i-1])/1.5;// - (distances[i]-distances[i-2])/2;
+                }
+                
+                /*if (i > 0 && distances[i-10]-distances[i-20] > 0 && distances[i]-distances[i-10] < 0 )
+                {
+                    //there has been a peak
+                    peaks.push_back(i-10);
+                }*/
+                
+                //NOT NORMALISING ATM
+                /*if (distances[i] > maxDistance) {
                     maxDistance = distances[i];
                 }
                 if (distances[i] < minDistance) {
                     minDistance = distances[i];
-                }
+                }*/
             }
+
+            Persistence1D persist;
             
-            for (int i = 0; i < points.size(); i++) {
+            persist.RunPersistence(distances);
+            persist.GetExtremaIndices(mins, maxs, 3.0, false);
+            
+            
+            /*for (int i = 0; i < points.size(); i++) {
                 distances[i] = (distances[i]-minDistance)/(maxDistance-minDistance) * 2 - 1;
-                printf("%f ", distances[i]);
-            }
+                //printf("%f ", distances[i]);
+            }*/
+            
+            
             
             
             //printf("%f %f \n\n", minDistance, maxDistance);
-            printf("\n\n");
+            //printf("\n\n");
         }
         
     }
@@ -100,23 +131,26 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    ofSetHexColor(0xffffff);
     ofSetColor(255, 150);
-    //gsImg.draw(0, 0, camWidth, camHeight);
+    gsImg.draw(0, 0, camWidth, camHeight);
     drawMat(inmat, 0, 0);
+//    for (int m = 0; m < maxs.size(); m++)
+
 }
 
 void ofApp::audioRequested 	(float * output, int bufferSize, int nChannels)
 {
-    for (int i = 0; i < bufferSize; i++)
-    {
-        double out = audioPlayer.jfBufferPlay(distances, distances.size());
-
-        mix.stereo(out, outputs, 0.5);
-        
-        output[i*nChannels    ] = outputs[0];
-        output[i*nChannels + 1] = outputs[1];
-    }
+    /*if (playbackOn && distances.size() > 1) {
+        for (int i = 0; i < bufferSize; i++)
+        {
+            double out = audioPlayer.jfBufferPlay(distances, (long)distances.size());
+            
+            mix.stereo(out, outputs, 0.5);
+            
+            output[i*nChannels    ] = outputs[0];
+            output[i*nChannels + 1] = outputs[1];
+        }
+    }*/
 }
 
 void ofApp::audioReceived 	(float * input, int bufferSize, int nChannels)
@@ -126,7 +160,13 @@ void ofApp::audioReceived 	(float * input, int bufferSize, int nChannels)
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-
+    if (key == 32) {
+        playbackOn = !playbackOn;
+        printf("playback on \n");
+    }
+    
+    printf("points: %lu maxs: %lu mins: %lu \n", points.size(), maxs.size(), mins.size());
+    //printf("points: %lu peaks: %lu \n", points.size(), peaks.size());
 }
 
 //--------------------------------------------------------------

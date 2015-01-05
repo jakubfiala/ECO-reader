@@ -4,8 +4,11 @@
 #include "ofxOpenCv.h"
 #include "ofxCv.h"
 #include "ofxMaxim.h"
+#include "persistence1d.hpp"
 #include <iostream>
 #include <vector>
+
+using namespace p1d;
 
 class ofApp : public ofBaseApp{
 
@@ -36,21 +39,16 @@ class ofApp : public ofBaseApp{
 
     
     ofVideoGrabber 		vidGrabber;
-    ofxCvColorImage     colorImg;
-    ofImage             img;
     ofxCvGrayscaleImage gsImg;
-    ofxCvContourFinder  contourFinder;
-    unsigned char * 	videoInverted;
-    ofTexture			videoTexture;
     int 				camWidth;
     int 				camHeight;
     vector<vector<int> > points;
-    vector<double>         distances;
-    double              bufferPosition;
+    vector<float>         distances;
+    vector<int>         mins, maxs, peaks;
     double              outputs[2];
+    Boolean             playbackOn = false;
     cv::Mat inmat;
-    
-    maxiSample audioPlayer;
+
     maxiMix mix;
 		
 };
