@@ -94,16 +94,33 @@ void ofApp::update(){
             
             Sign sign = *new Sign(maxs.size());
             
+            //calculate biggest peak
+            double maximumPeakValue = 0;
+            int maximumPeak;
+            for(int m = 0; m < maxs.size(); m++) {
+                if (distances[maxs[m]] > maximumPeakValue) {
+                    maximumPeakValue = distances[maxs[m]];
+                    maximumPeak = maxs[m];
+                }
+            }
+            
             for(int m = 0; m < maxs.size(); m++) {
                 Sign::peak p;
-                p.index = maxs[m];
-                p.level = distances[p.index];
+                if (maxs[m] == maximumPeak)
+                    p.level = 2;
+                else if (distances[maxs[m]]/maximumPeakValue < 0.5) {
+                    p.level = 1;
+                    //printf("HALF");
+                }
+                else
+                    p.level = 2;
                 sign.peaks.push_back(p);
             }
             
             for (int l = 0; l < lingua.signs.size(); l++) {
                 if (lingua.signs[l].compareAgainst(sign)) {
                     printf("found sign: %i \n", l);
+                    break;
                 }
             }
         }

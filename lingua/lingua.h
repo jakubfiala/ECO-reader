@@ -11,17 +11,18 @@
 
 #include <stdio.h>
 #include <vector>
+#include <cmath>
 
 using namespace std;
 
 class Sign {
 public:
-    Sign(int n);
-    int peakCount;
     struct peak {
-        int index;
         int level;
     };
+    Sign(vector<peak> p);
+    Sign(int n);
+    int peakCount;
     bool compareAgainst(Sign s);
     vector<peak> peaks;
     
