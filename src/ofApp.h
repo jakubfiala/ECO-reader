@@ -5,6 +5,7 @@
 #include "ofxCv.h"
 #include "ofxMaxim.h"
 #include "persistence1d.hpp"
+#include "lingua.h"
 #include <iostream>
 #include <vector>
 
@@ -50,5 +51,7 @@ class ofApp : public ofBaseApp{
     cv::Mat inmat;
 
     maxiMix mix;
-		
+    
+    Lingua lingua;
+    
 };

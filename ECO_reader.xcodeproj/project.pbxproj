@@ -14,6 +14,7 @@
 		1D5F3298C2FA073628012944 /* ofxCvContourFinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C76DE5C29BDBD2CAA1DD0021 /* ofxCvContourFinder.cpp */; };
 		22F21CE3B902225374BA1CA2 /* maximilian.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 87D3A0051CCB2C0F0ECA139E /* maximilian.cpp */; };
 		250A95BA26587BE85DB0A353 /* ofxCvColorImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CE9C7160245B19131DAE6128 /* ofxCvColorImage.cpp */; };
+		3B2255181A5C318200D0F542 /* lingua.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3B2255161A5C318200D0F542 /* lingua.cpp */; };
 		3B6A24CD1A2B8D9800EAFCF5 /* ETF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3B6A24B01A2B8D9800EAFCF5 /* ETF.cpp */; };
 		3B6A24CE1A2B8D9800EAFCF5 /* fdog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3B6A24B11A2B8D9800EAFCF5 /* fdog.cpp */; };
 		3B6A24CF1A2B8D9800EAFCF5 /* Calibration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3B6A24C11A2B8D9800EAFCF5 /* Calibration.cpp */; };
@@ -116,6 +117,8 @@
 		33FF03222909C1A0ECE43753 /* cv.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = cv.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv/cv.h; sourceTree = SOURCE_ROOT; };
 		36F0FF7F8D7342D220CC6319 /* dummy.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = dummy.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv2/flann/dummy.h; sourceTree = SOURCE_ROOT; };
 		3B22550A1A5AA55400D0F542 /* persistence1d.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = persistence1d.hpp; sourceTree = "<group>"; };
+		3B2255161A5C318200D0F542 /* lingua.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = lingua.cpp; path = lingua/lingua.cpp; sourceTree = "<group>"; };
+		3B2255171A5C318200D0F542 /* lingua.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lingua.h; path = lingua/lingua.h; sourceTree = "<group>"; };
 		3B6A24A51A2B8D9800EAFCF5 /* ofxCv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ofxCv.h; sourceTree = "<group>"; };
 		3B6A24A71A2B8D9800EAFCF5 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		3B6A24AB1A2B8D9800EAFCF5 /* ETF.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ETF.h; sourceTree = "<group>"; };
@@ -409,6 +412,15 @@
 			);
 			name = persistence1d;
 			path = src;
+			sourceTree = "<group>";
+		};
+		3B2255151A5C30E300D0F542 /* lingua */ = {
+			isa = PBXGroup;
+			children = (
+				3B2255161A5C318200D0F542 /* lingua.cpp */,
+				3B2255171A5C318200D0F542 /* lingua.h */,
+			);
+			name = lingua;
 			sourceTree = "<group>";
 		};
 		3B6A24A31A2B8D9800EAFCF5 /* ofxCv */ = {
@@ -824,6 +836,7 @@
 				E4B6FCAD0C3E899E008CF71C /* openFrameworks-Info.plist */,
 				E4EB6923138AFD0F00A09F29 /* Project.xcconfig */,
 				E4B69E1C0A3A1BDC003C02F2 /* src */,
+				3B2255151A5C30E300D0F542 /* lingua */,
 				3B22550C1A5AA59700D0F542 /* persistence1d */,
 				E4EEC9E9138DF44700A80321 /* openFrameworks */,
 				BB4B014C10F69532006C3DED /* addons */,
@@ -948,6 +961,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E4B69E200A3A1BDC003C02F2 /* main.cpp in Sources */,
+				3B2255181A5C318200D0F542 /* lingua.cpp in Sources */,
 				3B6A24CD1A2B8D9800EAFCF5 /* ETF.cpp in Sources */,
 				E4B69E210A3A1BDC003C02F2 /* ofApp.cpp in Sources */,
 				3B6A24CE1A2B8D9800EAFCF5 /* fdog.cpp in Sources */,

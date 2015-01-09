@@ -31,13 +31,14 @@ void ofApp::setup(){
     if (devices.size() == 1)
         vidGrabber.setDeviceID(0);
     else
-        vidGrabber.setDeviceID(0); //always select the secondary camera
+        vidGrabber.setDeviceID(1); //try to select the secondary camera
     vidGrabber.setDesiredFrameRate(60);
     vidGrabber.initGrabber(camWidth,camHeight);
-    
     ofSetVerticalSync(true);
     
     gsImg.allocate(640, 480);
+    
+    lingua = *new Lingua();
     
     ofSoundStreamSetup(2,0,this, 44100, 512, 4);
 }
@@ -47,10 +48,8 @@ void ofApp::update(){
     ofBackground(100,100,100);
     
     vidGrabber.update();
-    ofPixels pixels;
-    
     if (vidGrabber.isFrameNew()){
-        
+        ofPixels pixels;
         
         //work with the data
         pixels = vidGrabber.getPixelsRef();
@@ -64,14 +63,11 @@ void ofApp::update(){
         }
         
         gsImg.setFromPixels(pixels);
-        
         inmat = toCv(pixels);
-
         
         thinning(inmat);
         //only do this if we're detecting a line
         if (!points.empty()) {
-            
             
             mins.clear();
             maxs.clear();
@@ -87,22 +83,8 @@ void ofApp::update(){
             for (int i = 0; i < points.size(); i++) {
                 distances.push_back((float)pointDistanceFromLine(points[0], points[points.size()-1], points[i]));
                 if (i > 1) {
-                    distances[i] -= (distances[i]-distances[i-1])/1.5;// - (distances[i]-distances[i-2])/2;
+                    distances[i] -= (distances[i]-distances[i-1])/1.2;// - (distances[i]-distances[i-2])/2;
                 }
-                
-                /*if (i > 0 && distances[i-10]-distances[i-20] > 0 && distances[i]-distances[i-10] < 0 )
-                {
-                    //there has been a peak
-                    peaks.push_back(i-10);
-                }*/
-                
-                //NOT NORMALISING ATM
-                /*if (distances[i] > maxDistance) {
-                    maxDistance = distances[i];
-                }
-                if (distances[i] < minDistance) {
-                    minDistance = distances[i];
-                }*/
             }
 
             Persistence1D persist;
@@ -110,17 +92,11 @@ void ofApp::update(){
             persist.RunPersistence(distances);
             persist.GetExtremaIndices(mins, maxs, 3.0, false);
             
-            
-            /*for (int i = 0; i < points.size(); i++) {
-                distances[i] = (distances[i]-minDistance)/(maxDistance-minDistance) * 2 - 1;
-                //printf("%f ", distances[i]);
-            }*/
-            
-            
-            
-            
-            //printf("%f %f \n\n", minDistance, maxDistance);
-            //printf("\n\n");
+            for (int l = 0; l < lingua.signs.size(); l++) {
+                if (maxs.size() == lingua.signs[l].peakCount) {
+                    printf("found sign: %i \n", lingua.signs[l].peakCount);
+                }
+            }
         }
         
     }
