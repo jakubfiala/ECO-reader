@@ -31,7 +31,7 @@ void ofApp::setup(){
     if (devices.size() == 1)
         vidGrabber.setDeviceID(0);
     else
-        vidGrabber.setDeviceID(1); //try to select the secondary camera
+        vidGrabber.setDeviceID(0); //try to select the secondary camera
     vidGrabber.setDesiredFrameRate(60);
     vidGrabber.initGrabber(camWidth,camHeight);
     ofSetVerticalSync(true);
@@ -92,9 +92,18 @@ void ofApp::update(){
             persist.RunPersistence(distances);
             persist.GetExtremaIndices(mins, maxs, 3.0, false);
             
+            Sign sign = *new Sign(maxs.size());
+            
+            for(int m = 0; m < maxs.size(); m++) {
+                Sign::peak p;
+                p.index = maxs[m];
+                p.level = distances[p.index];
+                sign.peaks.push_back(p);
+            }
+            
             for (int l = 0; l < lingua.signs.size(); l++) {
-                if (maxs.size() == lingua.signs[l].peakCount) {
-                    printf("found sign: %i \n", lingua.signs[l].peakCount);
+                if (lingua.signs[l].compareAgainst(sign)) {
+                    printf("found sign: %i \n", l);
                 }
             }
         }
