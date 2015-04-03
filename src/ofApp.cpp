@@ -31,21 +31,32 @@ void ofApp::setup(){
     if (devices.size() == 1)
         vidGrabber.setDeviceID(0);
     else
-        vidGrabber.setDeviceID(0); //try to select the secondary camera
+        vidGrabber.setDeviceID(1); //try to select the secondary camera
+    
     vidGrabber.setDesiredFrameRate(60);
     vidGrabber.initGrabber(camWidth,camHeight);
+    
     ofSetVerticalSync(true);
     
     gsImg.allocate(640, 480);
     
+    freq = 600.0;
+    targetfreq = 600.0;
+    
     lingua = *new Lingua();
     
-    ofSoundStreamSetup(2,0,this, 44100, 512, 4);
+    vowel = 0;
+    
+    maxiSettings::sampleRate = 44100;
+    
+    ofSoundStreamSetup(2,2,this, 44100, 512, 4);
+    
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    ofBackground(100,100,100);
+    
     
     vidGrabber.update();
     if (vidGrabber.isFrameNew()){
@@ -55,20 +66,19 @@ void ofApp::update(){
         pixels = vidGrabber.getPixelsRef();
         pixels = pixels.getChannel(1); //EXTRACT THE GREEN CHANNEL, IT'S BETTER Ð this should be mentioned in thesis
         gsImg.setFromPixels(pixels);
-        gsImg.threshold(30);
         
         for (int i = 0; i < pixels.size(); i++){
-            if (pixels[i] > 200) pixels[i] = pixels[i];
-            else pixels[i] = 1;
+            if (pixels[i] > 250) pixels[i] = pixels[i];
+            else pixels[i] = 0;
         }
         
         gsImg.setFromPixels(pixels);
         inmat = toCv(pixels);
         
-        thinning(inmat);
+        blobToline(inmat);
         //only do this if we're detecting a line
         if (!points.empty()) {
-            
+            printf("points size %lu \n", points.size());
             mins.clear();
             maxs.clear();
             distances.clear();
@@ -78,19 +88,18 @@ void ofApp::update(){
             double minDistance = 1000.0;
             
             
-            
-            
             for (int i = 0; i < points.size(); i++) {
                 distances.push_back((float)pointDistanceFromLine(points[0], points[points.size()-1], points[i]));
                 if (i > 1) {
-                    distances[i] -= (distances[i]-distances[i-1])/1.2;// - (distances[i]-distances[i-2])/2;
+                    //low-pass filter
+                    distances[i] -= (distances[i]-distances[i-1])/1.05;// - (distances[i]-distances[i-2])/2;
                 }
             }
-
-            Persistence1D persist;
             
+            points.clear();
+
             persist.RunPersistence(distances);
-            persist.GetExtremaIndices(mins, maxs, 3.0, false);
+            persist.GetExtremaIndices(mins, maxs, 5.0, false);
             
             Sign sign = *new Sign(maxs.size());
             
@@ -116,10 +125,49 @@ void ofApp::update(){
                     p.level = 2;
                 sign.peaks.push_back(p);
             }
-            
+            //printf("peaks: %lu distances: %lu \n", sign.peaks.size(), distances.size());
             for (int l = 0; l < lingua.signs.size(); l++) {
-                if (lingua.signs[l].compareAgainst(sign)) {
-                    printf("found sign: %i \n", l);
+                if (lingua.signs[l].compareAgainst(sign) && l != prevsign) {
+                    prevsign = l;
+                    printf("found sign: %i with %lu peaks \n", l+1, sign.peaks.size());
+                    switch (l+1) {
+                        case 1:
+                            vowel = 0;
+                            break;
+                        case 2:
+                            vowel = 1;
+                            break;
+                        case 3:
+                            vowel = 2;
+                            break;
+                        case 4:
+                            targetfreq += 2*4;
+                            break;
+                        case 5:
+                            targetfreq += 2*3;
+                            break;
+                        case 6:
+                            targetfreq += 2*2;
+                            break;
+                        case 7:
+                            targetfreq += 2*1;
+                            break;
+                        case 8:
+                            targetfreq -= 2*1;
+                            break;
+                        case 9:
+                            targetfreq -= 2*2;
+                            break;
+                        case 10:
+                            targetfreq -= 2*3;
+                            break;
+                        case 11:
+                            targetfreq -= 2*4;
+                            break;
+                        default:
+                            break;
+                    }
+                    
                     break;
                 }
             }
@@ -128,47 +176,175 @@ void ofApp::update(){
     }
     
     
-    
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
     ofSetColor(255, 150);
-    gsImg.draw(0, 0, camWidth, camHeight);
-    drawMat(inmat, 0, 0);
-//    for (int m = 0; m < maxs.size(); m++)
-
-}
-
-void ofApp::audioRequested 	(float * output, int bufferSize, int nChannels)
-{
-    /*if (playbackOn && distances.size() > 1) {
-        for (int i = 0; i < bufferSize; i++)
-        {
-            double out = audioPlayer.jfBufferPlay(distances, (long)distances.size());
-            
-            mix.stereo(out, outputs, 0.5);
-            
-            output[i*nChannels    ] = outputs[0];
-            output[i*nChannels + 1] = outputs[1];
-        }
-    }*/
-}
-
-void ofApp::audioReceived 	(float * input, int bufferSize, int nChannels)
-{
+    ofBackground(0);
+    vidGrabber.draw(0,0);
+    dTToShow = distanceTransform * 255;
+    drawMat(dTToShow, 0, 0);
+    //gsImg.draw(0, 0, camWidth, camHeight);
     
+    //drawMat(inmat, 0, 0);
+    for (int i = 0; i < distances.size(); i++) {
+        ofRect(i*2, 0, 2, distances[i]);
+    }
+    ofSetColor(255, 0, 0);
+    for (int j = 0; j < maxs.size(); j++) {
+        ofRect(maxs[j]*2, 0, 2, distances[maxs[j]]);
+    }
+
 }
 
 //--------------------------------------------------------------
-void ofApp::keyPressed(int key){
-    if (key == 32) {
-        playbackOn = !playbackOn;
-        printf("playback on \n");
+void ofApp::audioOut(float * output, int bufferSize, int nChannels) {
+    if (freq < targetfreq) {
+        freq += 0.1;
+    }
+    else if (freq > targetfreq){
+        freq -= 1.1;
+    }
+    if (freq > 2000 || freq < 200) freq = 600.0;
+    for (int i = 0; i < bufferSize; i++){
+        double source = osc.saw(freq*2);
+        double out;
+        
+        if (vowel == 0)
+            out = filterbank.process(source, &efreqs[0], &eqs[0], &egains[0]);
+        else if (vowel == 1)
+            out = filterbank.process(source, &ifreqs[0], &iqs[0], &igains[0]);
+        else
+            out = filterbank.process(source, &ofreqs[0], &oqs[0], &ogains[0]);
+    
+        out*=0.5;
+        
+        
+        output[i*nChannels    ] = out;//left output
+        output[i*nChannels + 1] = out;//right output
+        
+    }
+}
+
+void ofApp::audioIn(float * input, int bufferSize, int nChannels) {
+    
+}
+
+//written by Tom Monkman (get a website Tom!)
+double ofApp::pointDistanceFromLine(cv::Point2i v1, cv::Point2i v2, cv::Point2i point)
+{
+    int x1 = v1.x;
+    int y1 = v1.y;
+    int x2 = v2.x;
+    int y2 = v2.y;
+    int pointX = point.x;
+    int pointY = point.y;
+    //Takes a line from 2 points (x1,y1/x2,y2) then works out the perpendicular distance to another point (pointX,pointY) and returns it.
+    //http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
+    
+    return (((x2 - x1)*(y1 - pointY)) - ((x1 - pointX)*(y2 - y1))) / (sqrt((double)((x2 - x1)*(x2 - x1)) + ((y2 - y1)*(y2 - y1))));
+}
+
+void ofApp::blobToline(cv::Mat &src)
+{
+    //OK so this function makes some assumstions, being that:
+    //The line will always be vertical, however it can lean, so a diagoal line would be fine, but I think a U shape would not work
+    
+    distanceTransform = cv::Mat::zeros(src.size(), CV_32FC1);//Must be a floating point image
+    
+    cv::distanceTransform(src, distanceTransform, CV_DIST_L2, 5);//This creates a skeleton like image
+    cv::normalize(distanceTransform, distanceTransform, 0.0, 1.0, 32);//This scales the whole image so that its between 0.0 and 1.0
+    unsigned int MyX = distanceTransform.cols;
+    unsigned int MyY = distanceTransform.rows;
+    float* p_distanceTransform = (float*)distanceTransform.data;//Pointers are faster
+    
+    //find the start and end of the line
+    cv::Point2i startPoint, endPoint;
+    for (unsigned int i = MyX; i < MyX * MyY - MyX; i++)//We can loop though the mat as if it is a 1 dimermisional array, this is faster than 2 for loops and using x and y
+    {
+        if (p_distanceTransform[i] > 0)//See if the pixel either side of the current pixel are lower, if they are, we have found a peak
+        {
+            //Top of blob found, record the position
+            startPoint.x = i % distanceTransform.cols;
+            startPoint.y = i / distanceTransform.cols;
+            break;//Now we can move on to the next part
+        }
+    }
+    for (unsigned int i = MyX * MyY - MyX; i > 0; i--)//We can loop though the mat as if it is a 1 dimermisional array, this is faster than 2 for loops and using x and y
+    {
+        if (p_distanceTransform[i] > 0)//See if the pixel either side of the current pixel are lower, if they are, we have found a peak
+        {
+            //Top of blob found, record the position
+            endPoint.x = i % distanceTransform.cols;
+            endPoint.y = i / distanceTransform.cols;
+            break;//Now we can move on to the next part
+        }
     }
     
-    printf("points: %lu maxs: %lu mins: %lu \n", points.size(), maxs.size(), mins.size());
-    //printf("points: %lu peaks: %lu \n", points.size(), peaks.size());
+    for (unsigned int y = startPoint.y; y < endPoint.y; y++)
+    {
+        float highest = 0;
+        unsigned int position = 0;
+        for (unsigned int i = y * MyX; i < (y * MyX) + MyX; i++)
+        {
+            if (p_distanceTransform[i] > highest)
+            {
+                highest = p_distanceTransform[i];
+                position = i;
+            }
+        }
+        //Record the position found
+        cv::Point2i foundPoint;
+        foundPoint.x = position % distanceTransform.cols;
+        foundPoint.y = position / distanceTransform.cols;
+        points.push_back(foundPoint);
+    }
+    
+}
+
+
+//--------------------------------------------------------------
+void ofApp::keyPressed(int key){
+    //printf("points: %lu maxs: %lu mins: %lu \n", points.size(), maxs.size(), mins.size());
+    /*int l = round(key % 10);
+    switch (l+1) {
+        case 1:
+            vowel = 0;
+            break;
+        case 2:
+            vowel = 1;
+            break;
+        case 3:
+            vowel = 2;
+            break;
+        case 4:
+            targetfreq += 2*4;
+            break;
+        case 5:
+            targetfreq += 2*3;
+            break;
+        case 6:
+            targetfreq += 2*2;
+            break;
+        case 7:
+            targetfreq += 2*1;
+            break;
+        case 8:
+            targetfreq -= 2*1;
+            break;
+        case 9:
+            targetfreq -= 2*2;
+            break;
+        case 10:
+            targetfreq -= 2*3;
+            break;
+        case 11:
+            targetfreq -= 2*4;
+            break;
+        default:
+            break;
+    }*/
 }
 
 //--------------------------------------------------------------
@@ -178,6 +354,9 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
+    /*if (x > 0 && y > 0) {
+        efreq1 = ofMap(x, 0, ofGetWidth(), 300, 8000);
+    }*/
 
 }
 
@@ -212,93 +391,3 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 }
 
 
-//Zhang-Suen thinning algorithm
-//T. Y. Zhang and C. Y. Suen. 1984. A fast parallel algorithm for thinning digital patterns. Commun. ACM 27, 3 (March 1984), 236-239. DOI=10.1145/357994.358023 http://doi.acm.org/10.1145/357994.358023
-//just awesome.
-
-/**
- * Perform one thinning iteration.
- * Normally you wouldn't call this function directly from your code.
- *
- * @param  im    Binary image with range = 0-1
- * @param  iter  0=even, 1=odd
- */
-void ofApp::thinningIteration(cv::Mat& im, int iter)
-{
-    points.clear();
-
-    cv::Mat marker = cv::Mat::zeros(im.size(), CV_8UC1);
-    
-    for (int i = 1; i < im.rows-1; i++)
-    {
-        for (int j = 1; j < im.cols-1; j++)
-        {
-            uchar p2 = im.at<uchar>(i-1, j);
-            uchar p3 = im.at<uchar>(i-1, j+1);
-            uchar p4 = im.at<uchar>(i, j+1);
-            uchar p5 = im.at<uchar>(i+1, j+1);
-            uchar p6 = im.at<uchar>(i+1, j);
-            uchar p7 = im.at<uchar>(i+1, j-1);
-            uchar p8 = im.at<uchar>(i, j-1);
-            uchar p9 = im.at<uchar>(i-1, j-1);
-            
-            int A  = (p2 == 0 && p3 == 1) + (p3 == 0 && p4 == 1) +
-            (p4 == 0 && p5 == 1) + (p5 == 0 && p6 == 1) +
-            (p6 == 0 && p7 == 1) + (p7 == 0 && p8 == 1) +
-            (p8 == 0 && p9 == 1) + (p9 == 0 && p2 == 1);
-            int B  = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9;
-            int m1 = iter == 0 ? (p2 * p4 * p6) : (p2 * p4 * p8);
-            int m2 = iter == 0 ? (p4 * p6 * p8) : (p2 * p6 * p8);
-            
-            if (A == 1 && (B >= 2 && B <= 6) && m1 == 0 && m2 == 0)
-            {
-                marker.at<uchar>(i,j) = 1;
-                vector<int> pt;
-                pt.push_back(i);
-                pt.push_back(j);
-                points.push_back(pt);
-            }
-        }
-    }
-
-    im &= ~marker;
-}
-
-/**
- * Function for thinning the given binary image
- *
- * @param  im  Binary image with range = 0-255
- */
-void ofApp::thinning(cv::Mat& im)
-{
-    im /= 255;
-    
-    cv::Mat prev = cv::Mat::zeros(im.size(), CV_8UC1);
-    cv::Mat diff;
-    
-    do {
-        thinningIteration(im, 0);
-        thinningIteration(im, 1);
-        cv::absdiff(im, prev, diff);
-        im.copyTo(prev);
-    }
-    while (cv::countNonZero(diff) > 0);
-    
-    im *= 255;
-}
-
-
-//written by Tom Monkman (get a website Tom!)
-double ofApp::pointDistanceFromLine(vector<int> v1, vector<int> v2, vector<int> point)
-{
-    int x1 = v1[0];
-    int y1 = v1[1];
-    int x2 = v2[0];
-    int y2 = v2[1];
-    int pointX = point[0];
-    int pointY = point[1];
-    //Takes a line from 2 points (x1,y1/x2,y2) then works out the perpendicular distance to another point (pointX,pointY) and returns it.
-    //http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
-    
-    return (((x2 - x1)*(y1 - pointY)) - ((x1 - pointX)*(y2 - y1))) / (sqrt((double)((x2 - x1)*(x2 - x1)) + ((y2 - y1)*(y2 - y1))));
-}
