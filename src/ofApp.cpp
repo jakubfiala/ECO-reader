@@ -41,6 +41,8 @@ void ofApp::setup(){
     vidGrabber.setDesiredFrameRate(60);
     vidGrabber.initGrabber(camWidth,camHeight);
     
+    osc.setup(8320);
+    
     ofSetVerticalSync(true);
     
     gsImg.allocate(640, 480);
@@ -52,12 +54,18 @@ void ofApp::setup(){
     
     position = 0;
     
+    
     ofSoundStreamSetup(2,2,this, 44100, 512, 4);
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    
+    while(osc.hasWaitingMessages()) {
+        ofxOscMessage m;
+        osc.getNextMessage(&m);
+        env.trigger(0, envdata[0]);
+        cout << m.getArgAsString(0) << endl;
+    }
     
     /*vidGrabber.update();
     if (vidGrabber.isFrameNew()){
@@ -183,20 +191,6 @@ void ofApp::update(){
 void ofApp::draw(){
     ofSetColor(255, 150);
     ofBackground(0);
-    /*vidGrabber.draw(0,0);
-    dTToShow = distanceTransform * 255;
-    drawMat(dTToShow, 0, 0);
-    //gsImg.draw(0, 0, camWidth, camHeight);
-    
-    //drawMat(inmat, 0, 0);
-    for (int i = 0; i < distances.size(); i++) {
-        ofRect(i*2, 0, 2, distances[i]);
-    }
-    ofSetColor(255, 0, 0);
-    for (int j = 0; j < maxs.size(); j++) {
-        ofRect(maxs[j]*2, 0, 2, distances[maxs[j]]);
-    }*/
-
 }
 
 //--------------------------------------------------------------
@@ -207,8 +201,8 @@ void ofApp::audioOut(float * output, int bufferSize, int nChannels) {
         //play samples
         if (!distances.empty())
         {
-            out = distances[position];
-            position++;
+            out = distances[position] * env.line(4, envdata);
+            position+=4;
             if (position > distances.size()) position = 0;
         }
         else out = 0;

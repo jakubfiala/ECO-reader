@@ -4,6 +4,7 @@
 #include "ofxOpenCv.h"
 #include "ofxCv.h"
 #include "ofxMaxim.h"
+#include "ofxOsc.h"
 #include "persistence1d.hpp"
 #include "lingua.h"
 #include <iostream>
@@ -49,7 +50,10 @@ class ofApp : public ofBaseApp{
     int                 position;
     cv::Mat             inmat,distanceTransform,dTToShow;
     
-    maxiSample player;
+    ofxOscReceiver osc;
+    maxiEnvelope   env;
+    
+    double envdata[4] = {0.9, 50, 0, 500};
     
     int vowel;
     
