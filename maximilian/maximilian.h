@@ -322,7 +322,7 @@ public:
 	
 	double bufferPlay(unsigned char &bufferin,double frequency, double start, double end);
     
-    double bufferPlay(vector<double> buffer,long length, double speed);
+    double bufferPlay(vector<double> buffer,long length);
 	
 	double bufferPlay4(unsigned char &bufferin,double frequency, double start, double end);
     bool save() {

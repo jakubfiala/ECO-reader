@@ -956,12 +956,12 @@ double maxiSample::bufferPlay(unsigned char &bufferin,long length) {
 	return(output);
 }
 
-double maxiSample::bufferPlay(vector<double> buffer,long length, double speed) {
+double maxiSample::bufferPlay(vector<double> buffer,long length) {
     double remainder;
-    position=(position+1);
+    position=(position+2);
     remainder = position - (long) position;
     if ((long) position>length) position=0;
-    output = (double) ((1-remainder) * buffer[1+ (long) position]/300 + remainder * buffer[2+(long) position]/300);//linear interpolation
+    output = (double) ((1-remainder) * buffer[1+ (long) position] + remainder * buffer[2+(long) position]);//linear interpolation
     return(output);
 }
 
