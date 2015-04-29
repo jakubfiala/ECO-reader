@@ -47,13 +47,16 @@ class ofApp : public ofBaseApp{
     vector<double>       distances;
     vector<int>         mins, maxs, peaks;
     double              outputs[2];
-    int                 position;
+    double                 position;
     cv::Mat             inmat,distanceTransform,dTToShow;
     
     ofxOscReceiver osc;
     maxiEnvelope   env;
+    maxiDistortion amp;
+    maxiOsc        noise;
     
-    double envdata[4] = {0.9, 50, 0, 500};
+    
+    double envdata[8] = {0.9, 50, 0.7, 500, 0.5, 1000, 0.0001, 1000};
     
     int vowel;
     

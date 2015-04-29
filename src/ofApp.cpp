@@ -196,8 +196,8 @@ void ofApp::audioOut(float * output, int bufferSize, int nChannels) {
         if (!distances.empty())
         {
             
-            out = distances[position] * env.line(4, envdata);
-            position+=4;
+            out = (amp.atanDist(distances[(long)position], 500)*0.8 + noise.noise()*0.2) * env.line(8, envdata);
+            position+=0.3;
             if (position > distances.size()) position = 0;
         }
         else out = 0;
