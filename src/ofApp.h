@@ -56,7 +56,7 @@ class ofApp : public ofBaseApp{
     maxiOsc        noise;
     
     
-    double envdata[8] = {0.9, 50, 0.7, 500, 0.5, 1000, 0.0001, 1000};
+    double envdata[8] = {0.9, 50, 0.7, 500, 0.5, 1000, 0.0001, 2000};
     
     int vowel;
     
