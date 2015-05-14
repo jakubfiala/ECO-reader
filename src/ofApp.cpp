@@ -1,4 +1,4 @@
-// ECO_reader
+// TAR_reader
 // oF implementation of structured light scanning (laser line)
 // by Jakub Fiala ||| http://fiala.uk
 // for the Ex Caelis Oblata project http://excaelisoblata.tumblr.com/
@@ -19,7 +19,7 @@ void ofApp::setup(){
     camHeight 		= 480;
     //we can now get back a list of devices.
     vector<ofVideoDevice> devices = vidGrabber.listDevices();
-    
+
     for(int i = 0; i < devices.size(); i++){
         cout << devices[i].id << ": " << devices[i].deviceName;
         if( devices[i].bAvailable ){
@@ -28,27 +28,32 @@ void ofApp::setup(){
             cout << " - unavailable " << endl;
         }
     }
-    
+
     if (devices.size() == 1)
         vidGrabber.setDeviceID(0);
     else
         vidGrabber.setDeviceID(1); //try to select the secondary camera
-    
+
     vidGrabber.setDesiredFrameRate(60);
     vidGrabber.initGrabber(camWidth,camHeight);
-    
+
     osc.setup(8320);
-    
+
     ofSetVerticalSync(true);
-    
+
     gsImg.allocate(640, 480);
-    
+
     maxiSettings::sampleRate = 44100;
-    
+
     position = 0;
-    
-    
-    ofSoundStreamSetup(2,2,this, 44100, 512, 4);
+
+    stream.listDevices();
+    stream.setDeviceID(4);
+
+    stream.setup(this, 4, 0, 44100, 512, 4);
+
+    stream.start();
+
 }
 
 //--------------------------------------------------------------
@@ -59,24 +64,24 @@ void ofApp::update(){
         env.trigger(0, envdata[0]);
         cout << m.getArgAsString(0) << endl;
     }
-    
+
     vidGrabber.update();
     if (vidGrabber.isFrameNew()){
         ofPixels pixels;
-        
+
         //work with the data
         pixels = vidGrabber.getPixelsRef();
         pixels = pixels.getChannel(1); //EXTRACT THE GREEN CHANNEL, IT'S BETTER Ð this should be mentioned in thesis
         gsImg.setFromPixels(pixels);
-        
+
         for (int i = 0; i < pixels.size(); i++){
             if (pixels[i] > 150) pixels[i] = pixels[i];
             else pixels[i] = 0;
         }
-        
+
         gsImg.setFromPixels(pixels);
         inmat = toCv(pixels);
-        
+
         blobToline(inmat);
         //only do this if we're detecting a line
         if (!points.empty()) {
@@ -85,99 +90,22 @@ void ofApp::update(){
             maxs.clear();
             distances.clear();
             peaks.clear();
-            
+
             double maxDistance = 0.0;
             double minDistance = 1000.0;
-            
-            
+
+
             for (int i = 0; i < points.size(); i++) {
                 distances.push_back((float)pointDistanceFromLine(points[0], points[points.size()-1], points[i]));
-                /*if (i > 1) {
-                    //low-pass filter
-                    distances[i] -= (distances[i]-distances[i-1])/1.05;// - (distances[i]-distances[i-2])/2;
-                }*/
             }
-            
+
             points.clear();
 
-            /*persist.RunPersistence(distances);
-            persist.GetExtremaIndices(mins, maxs, 5.0, false);
-            
-            Sign sign = *new Sign(maxs.size());
-            
-            //calculate biggest peak
-            double maximumPeakValue = 0;
-            int maximumPeak;
-            for(int m = 0; m < maxs.size(); m++) {
-                if (distances[maxs[m]] > maximumPeakValue) {
-                    maximumPeakValue = distances[maxs[m]];
-                    maximumPeak = maxs[m];
-                }
-            }
-            
-            for(int m = 0; m < maxs.size(); m++) {
-                Sign::peak p;
-                if (maxs[m] == maximumPeak)
-                    p.level = 2;
-                else if (distances[maxs[m]]/maximumPeakValue < 0.5) {
-                    p.level = 1;
-                    //printf("HALF");
-                }
-                else
-                    p.level = 2;
-                sign.peaks.push_back(p);
-            }
-            //printf("peaks: %lu distances: %lu \n", sign.peaks.size(), distances.size());
-            for (int l = 0; l < lingua.signs.size(); l++) {
-                if (lingua.signs[l].compareAgainst(sign) && l != prevsign) {
-                    prevsign = l;
-                    printf("found sign: %i with %lu peaks \n", l+1, sign.peaks.size());
-                    switch (l+1) {
-                        case 1:
-                            vowel = 0;
-                            break;
-                        case 2:
-                            vowel = 1;
-                            break;
-                        case 3:
-                            vowel = 2;
-                            break;
-                        case 4:
-                            targetfreq += 2*4;
-                            break;
-                        case 5:
-                            targetfreq += 2*3;
-                            break;
-                        case 6:
-                            targetfreq += 2*2;
-                            break;
-                        case 7:
-                            targetfreq += 2*1;
-                            break;
-                        case 8:
-                            targetfreq -= 2*1;
-                            break;
-                        case 9:
-                            targetfreq -= 2*2;
-                            break;
-                        case 10:
-                            targetfreq -= 2*3;
-                            break;
-                        case 11:
-                            targetfreq -= 2*4;
-                            break;
-                        default:
-                            break;
-                    }
-                    
-                    break;
-                }
-            }*/
         }
-        
+
     }
-    
-    
+
+
 }
 
 //--------------------------------------------------------------
@@ -190,26 +118,26 @@ void ofApp::draw(){
 //--------------------------------------------------------------
 void ofApp::audioOut(float * output, int bufferSize, int nChannels) {
     double out;
-    
+
     for (int i = 0; i < bufferSize; i++){
         //play samples
         if (!distances.empty())
         {
-            
-            out = (amp.atanDist(distances[(long)position], 500)*0.8 + noise.noise()*0.2) * env.line(8, envdata);
-            position+=0.3;
+
+            out = (amp.atanDist(distances[(long)position], 500)*0.8 + noise.noise()*0.2) * env.line(8, envdata); //distort and mix in noise, scale by envelope
+            position+=0.3; //slow down by 30%
             if (position > distances.size()) position = 0;
         }
         else out = 0;
-        
+
         output[i*nChannels    ] = out;//left output
         output[i*nChannels + 1] = out;//right output
-        
+
     }
 }
 
 void ofApp::audioIn(float * input, int bufferSize, int nChannels) {
-    
+
 }
 
 //written by Tom Monkman (get a website Tom!)
@@ -223,7 +151,7 @@ double ofApp::pointDistanceFromLine(cv::Point2i v1, cv::Point2i v2, cv::Point2i 
     int pointY = point.y;
     //Takes a line from 2 points (x1,y1/x2,y2) then works out the perpendicular distance to another point (pointX,pointY) and returns it.
     //http://mathworld.wolfram.com/Point-LineDistance2-Dimensional.html
-    
+
     return (((x2 - x1)*(y1 - pointY)) - ((x1 - pointX)*(y2 - y1))) / (sqrt((double)((x2 - x1)*(x2 - x1)) + ((y2 - y1)*(y2 - y1))));
 }
 
@@ -231,15 +159,15 @@ void ofApp::blobToline(cv::Mat &src)
 {
     //OK so this function makes some assumstions, being that:
     //The line will always be vertical, however it can lean, so a diagoal line would be fine, but I think a U shape would not work
-    
+
     distanceTransform = cv::Mat::zeros(src.size(), CV_32FC1);//Must be a floating point image
-    
+
     cv::distanceTransform(src, distanceTransform, CV_DIST_L2, 5);//This creates a skeleton like image
     cv::normalize(distanceTransform, distanceTransform, 0.0, 1.0, 32);//This scales the whole image so that its between 0.0 and 1.0
     unsigned int MyX = distanceTransform.cols;
     unsigned int MyY = distanceTransform.rows;
     float* p_distanceTransform = (float*)distanceTransform.data;//Pointers are faster
-    
+
     //find the start and end of the line
     cv::Point2i startPoint, endPoint;
     for (unsigned int i = MyX; i < MyX * MyY - MyX; i++)//We can loop though the mat as if it is a 1 dimermisional array, this is faster than 2 for loops and using x and y
@@ -262,7 +190,7 @@ void ofApp::blobToline(cv::Mat &src)
             break;//Now we can move on to the next part
         }
     }
-    
+
     for (unsigned int y = startPoint.y; y < endPoint.y; y++)
     {
         float highest = 0;
@@ -281,13 +209,19 @@ void ofApp::blobToline(cv::Mat &src)
         foundPoint.y = position / distanceTransform.cols;
         points.push_back(foundPoint);
     }
-    
+
 }
 
 
+void ofApp::exit() {
+    distances.clear();
+    points.clear();
+    stream.stop();
+}
+
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-    env.trigger(0, envdata[0]);
+    //env.trigger(0, envdata[0]);
 }
 
 //--------------------------------------------------------------
@@ -329,7 +263,7 @@ void ofApp::gotMessage(ofMessage msg){
 }
 
 //--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
+void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
 

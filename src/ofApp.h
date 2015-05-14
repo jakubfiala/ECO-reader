@@ -29,6 +29,8 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
     
+        void exit();
+    
         //maximilian stuff
         void audioOut(float * output, int bufferSize, int nChannels);
         void audioIn(float * input, int bufferSize, int nChannels);
@@ -49,6 +51,8 @@ class ofApp : public ofBaseApp{
     double              outputs[2];
     double                 position;
     cv::Mat             inmat,distanceTransform,dTToShow;
+    
+    ofSoundStream  stream;
     
     ofxOscReceiver osc;
     maxiEnvelope   env;
